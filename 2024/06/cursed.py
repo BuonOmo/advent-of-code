@@ -10,9 +10,9 @@ from pygments.lexers import PythonLexer
 
 
 def dbg(*args):
-    from pprint import pp
+	from pprint import pp
 
-    pp(*args, stream=open("debug.log", "a"))
+	pp(*args, stream=open("debug.log", "a"))
 
 
 class Cursed:
@@ -121,35 +121,35 @@ class Cursed:
 	# 	if cmd == curses.KEY_MOUSE:
 	# 		dbg(f"cmd: {cmd} pad_pos: {self.pad_pos}")
 	# 		# self.pad_pos = max(self.pad_pos - 1, 0)
- #        # elif cmd == curses.KEY_UP:
- #        # self.pad_pos += 1
- #        else:
- #            return
- #        y, x = self.stdscr.getmaxyx()
- #        _wy, wx = self.grid_window.getmaxyx()
- #        self.pad.refresh(self.pad_pos, 0, 0, wx, y - 1, x - 1)
+ #		# elif cmd == curses.KEY_UP:
+ #		# self.pad_pos += 1
+ #		else:
+ #			return
+ #		y, x = self.stdscr.getmaxyx()
+ #		_wy, wx = self.grid_window.getmaxyx()
+ #		self.pad.refresh(self.pad_pos, 0, 0, wx, y - 1, x - 1)
 
 	def __getattr__(self, name):
 		return getattr(self.stdscr, name)
 
 
 if __name__ == "__main__":
-    with Cursed() as cursed, open("input", "r") as file:
-        curses.start_color()
-        curses.use_default_colors()
-        curses.mousemask(curses.ALL_MOUSE_EVENTS)
-        cursed.pp(
-            [
-                "Hello, long long long long long long long long long long long long long long World!",
-                "This is a test.",
-                "Another line.\n",
-                {"response": 42},
-                list(range(100)),
-            ]
-        )
-        str = file.read()
-        for i in range(100):
-            cursed.print_grid(str, (i, i))
-            cursed.pp((i, i))
-            time.sleep(0.1)
-            # cursed.wait()
+	with Cursed() as cursed, open("input", "r") as file:
+		curses.start_color()
+		curses.use_default_colors()
+		curses.mousemask(curses.ALL_MOUSE_EVENTS)
+		cursed.pp(
+			[
+				"Hello, long long long long long long long long long long long long long long World!",
+				"This is a test.",
+				"Another line.\n",
+				{"response": 42},
+				list(range(100)),
+			]
+		)
+		str = file.read()
+		for i in range(100):
+			cursed.print_grid(str, (i, i))
+			cursed.pp((i, i))
+			time.sleep(0.1)
+			# cursed.wait()
