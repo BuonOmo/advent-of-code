@@ -1,19 +1,70 @@
 #!/usr/bin/env zsh
+#
+# Arguments:
+# -l language (py, rb, c), defaults to py
+# -y year     four digits
+# -d day
 
-last=$(echo */*(/On) | cut -d' ' -f1)
-newday=$(ruby -pe '$_.next!'<<<$last)
-year=${newday:0:4}
-day=${newday:5:2}
+lang=py
+
+# Parse arguments
+while getopts ":l:y:d:" opt; do
+	case $opt in
+		l) lang=$OPTARG ;;
+		y) year=${(l:4::20:)OPTARG} ;;
+		d) day=${(l:2::0:)OPTARG} ;;
+		\?) echo "Invalid option -$OPTARG" >&2 ;;
+	esac
+done
+
+local -a folders=(*/*(/OnN))
+
+if (($#folders )); then
+	newday="${folders[1]}"
+else
+	# Default to current year day 1
+	newday=$(date +%Y/01)
+fi
+
+year=${year:-${newday:0:4}}
+day=${day:-${newday:5:2}}
+
+newday="${year}/${day}"
+
+day_url="https://adventofcode.com/$year/day/${day#0}"
+
+[[ -f template.$lang ]] || {
+	local -a templates=(template.*)
+	join=${(j:, :)templates:e}
+	>&2 echo "Template file not found."
+	>&2 echo "Please create 'template.$lang' or use one"
+	>&2 echo "existing template file ($join)."
+	exit 1
+}
 
 mkdir -p $newday
 cd $newday
-cp ../../template.py part1.py
+cp ../../template.$lang part1.$lang
 
+open "$day_url"
+
+echo -n 'Copy example to clipboard and press Enter'
+read -qs
+echo
 pbpaste > example
 
-http "https://adventofcode.com/$year/day/${day#0}/input" \
+http --check-status "$day_url/input" \
 	"Cookie:session=$ADVENT_SESSION" \
-	> input
+	2> /dev/null > input || {
+		>&2 echo "Failed to download input."
+		if [[ -z $ADVENT_SESSION ]]; then
+			>&2 echo "Did you set ADVENT_SESSION?"
+		else
+			>&2 echo "Is your ADVENT_SESSION valid?"
+		fi
+		>&2 echo "Is $day_url a valid URL?"
+		exit 1
+}
 
-zed part1.py
+zed part1.$lang
 echo $newday
