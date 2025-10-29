@@ -1,3 +1,4 @@
+///usr/bin/env gcc ${0} -o ${0%%.c} -O3 && ./${0%%.c} && exit 0
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
