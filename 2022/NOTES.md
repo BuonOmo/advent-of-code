@@ -1,0 +1,2 @@
+- Day 5 could be animated. Why not use kilo and experiment with position finding?
+- Templates could have some automation.

@@ -1,0 +1,19 @@
+#!/usr/bin/env zsh
+
+last=$(echo */*(/On) | cut -d' ' -f1)
+newday=$(ruby -pe '$_.next!'<<<$last)
+year=${newday:0:4}
+day=${newday:5:2}
+
+mkdir -p $newday
+cd $newday
+cp ../../template.py part1.py
+
+pbpaste > example
+
+http "https://adventofcode.com/$year/day/${day#0}/input" \
+	"Cookie:session=$ADVENT_SESSION" \
+	> input
+
+zed part1.py
+echo $newday
