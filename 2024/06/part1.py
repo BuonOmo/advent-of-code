@@ -16,12 +16,19 @@ def update(state):
 	dir = state['direction']
 	obstacles = state['obstacles']
 	x, y = state['position']
-	if dir == 'up':
-		if obstacles[x - 1][y]:
-			x, y = x, y + 1
-			dir = 'right'
-		else:
-			x, y = x - 1, y
+	vectors = {
+		'up': (-1, 0),
+		'right': (0, 1),
+		'down': (1, 0),
+		'left': (0, -1),
+	}
+	directions = ['up', 'right', 'down', 'left']
+	new_x = x + vectors[dir][0]
+	new_y = y + vectors[dir][1]
+	if obstacles[new_x][new_y]:
+		dir = directions[(directions.index(dir) + 1) % len(directions)]
+	else:
+		x, y = new_x, new_y
 	return {
 		'direction': dir,
 		'position': (x, y),
@@ -34,7 +41,7 @@ def show(state, display):
 	for i in range(state['size'][0]):
 		for j in range(state['size'][1]):
 			if state['obstacles'][i][j]:
-			    s += '#'
+				s += '#'
 			elif state['position'] == (i, j):
 				s += '^'
 			else:
@@ -42,7 +49,7 @@ def show(state, display):
 		s += '\n'
 	display.print_grid(s, state['position'])
 	# display.pp(state)
-	sleep(0.05)
+	sleep(0.1)
 
 with Cursed() as c:
 	def print(obj):
