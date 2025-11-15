@@ -57,3 +57,13 @@ for i in range(10):
 	elif i == 5:
 		break
 	print(i)
+
+
+## Sets
+
+my_set = set()
+help(my_set)
+help(my_set.add)
+my_set.add("foo")
+my_set.add("foo")
+print(my_set) # {'foo'}
