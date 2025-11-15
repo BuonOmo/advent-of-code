@@ -43,7 +43,12 @@ def show(state, display):
 			if state['obstacles'][i][j]:
 				s += '#'
 			elif state['position'] == (i, j):
-				s += '^'
+				s += {
+					'up': '^',
+					'right': '>',
+					'down': 'v',
+					'left': '<'
+				}[state['direction']]
 			else:
 				s += '.'
 		s += '\n'
