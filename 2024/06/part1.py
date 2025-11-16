@@ -1,5 +1,5 @@
 import fileinput
-from time import sleep
+from time import sleep, perf_counter
 from cursed import Cursed
 
 def creerlesobstacles(tableau) -> list[list[bool]]:
@@ -87,9 +87,18 @@ with Cursed() as c:
 		'visited': set([trouverlamadame(tableau)])
 	}
 
+	t0 = perf_counter()
+	count = 0
 	while state['running']:
+		count += 1
 		state = update(state)
-		show(state, c)
+		#show(state, c)
+	taken = perf_counter() - t0
+	print(f"""
+		Number of steps: {count}
+		Time taken: {taken:.2f} seconds
+		Part2 estimate {taken * count:.2f} seconds
+	""")
 
 	print(len(state['visited']))
 	sleep(10)

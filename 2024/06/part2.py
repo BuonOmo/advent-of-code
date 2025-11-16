@@ -49,9 +49,6 @@ def update(state):
 	new_x = x + vectors[dir][0]
 	new_y = y + vectors[dir][1]
 
-	# TODO: detecter la boucle.
-	# TODO: la faire avancer de 1 une fois le test passé.
-
 	if not (
 		0 <= new_x < state['size'][0] and 0 <= new_y < state['size'][1]
 	):  # La madame sort
@@ -60,7 +57,7 @@ def update(state):
 		else:
 			dir = backup['direction']
 			x, y = backup['position']
-			obstacles = backup['obstacles']
+			obstacles[x][y] = False
 			backup = None
 	elif obstacles[new_x][new_y]:  # La madame trouve un obstacle
 		if (
@@ -68,9 +65,14 @@ def update(state):
 			and (new_x, new_y) == backup['position']
 			and dir == backup['direction']
 		):  # Ça boucle
+			# FIXME: on detecte seulement les boucles qui reviennent
+			#   la ou on a mis un nouvel obstacle. Mais certaines
+			#   boucles peuvent être bloquées après ça. Il faut
+			#   detecter les boucles avec les autres obstacles que
+			#   ceux qu'on a créé.
 			count += 1
-			obstacles = backup['obstacles']
 			x, y = backup['position']
+			obstacles[x][y] = False
 			backup = None
 		else:
 			dir = directions[(directions.index(dir) + 1) % len(directions)]
@@ -79,7 +81,6 @@ def update(state):
 			backup = {
 				'direction': dir,
 				'position': (new_x, new_y),
-				'obstacles': deepcopy(obstacles),
 			}
 			obstacles[new_x][new_y] = True
 			dir = directions[(directions.index(dir) + 1) % len(directions)]
@@ -99,7 +100,7 @@ def update(state):
 
 tableau: list[list[str]] = []
 
-with open('example') as file:
+with open('input') as file:
 	for line in file:
 		tableau.append(list(line.strip()))
 
@@ -129,14 +130,26 @@ def show(state, display):
 				s += '.'
 		s += '\n'
 	display.print_grid(s, state['position'])
-	display.pp(state['count'])
-	sleep(0.1 if state['backup'] is None else 0.01)
+	# display.pp(state['count'])
+	sleep(1 if state['backup'] is None else 0.1)
 
 
 with Cursed() as c:
+	total_steps = 6024
+	steps = 0
+	prout = True
 	while state['running']:
+		if state['backup'] is None:
+			steps += 1
+		# print(f"Progress: {100 * steps / total_steps:.2f}% ({steps})\r", end='')
 		state = update(state)
-		show(state, c)
+
+		if steps >= 9:
+			if prout:
+				c.pp(state)
+			prout = False
+			# c.pp(steps)
+			show(state, c)
 
 
 def nwise(iterable, n):
