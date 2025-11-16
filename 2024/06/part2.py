@@ -1,11 +1,15 @@
 from pprint import pp
 
+
 def interact():
-    import code
-    code.InteractiveConsole(locals=globals()).interact()
+	import code
+
+	code.InteractiveConsole(locals=globals()).interact()
+
 
 def creerlesobstacles(tableau) -> list[list[bool]]:
 	return [[cell == '#' for cell in row] for row in tableau]
+
 
 def trouverlamadame(tableau) -> tuple[int, int]:
 	"""
@@ -27,8 +31,23 @@ def find_suspect(visited: list[tuple[int, int]]) -> tuple[int, int] | None:
 
 	if a[0] == b[0]:
 		return (c[0], a[1])
-	else
-	 	return (a[0], c[1])
+	else:
+		return (a[0], c[1])
+
+
+def detect_obstacle(
+	a: tuple[int, int], b: tuple[int, int], obstacles: list[list[bool]]
+) -> bool:
+	if a[0] == b[0]:
+		for i in range(min(a[1], b[1]), max(a[1], b[1])):
+			if obstacles[a[0]][i]:
+				return True
+	else:
+		for i in range(min(a[0], b[0]), max(a[0], b[0])):
+			if obstacles[i][a[1]]:
+				return True
+	return False
+
 
 def update(state):
 	dir = state['direction']
@@ -42,6 +61,7 @@ def update(state):
 
 	if (x, y) == suspect and not detect_obstacle(suspect, visited[-3], obstacles):
 		count += 1
+		pp(suspect)
 
 	vectors = {
 		'up': (-1, 0),
@@ -88,7 +108,7 @@ state = {
 	'position': (first_x, first_y),
 	'obstacles': obstacles,
 	'size': (len(tableau), len(tableau[0])),
-	'visited': visited
+	'visited': visited,
 }
 
 while state['running']:
@@ -97,10 +117,11 @@ while state['running']:
 
 def nwise(iterable, n):
 	iterator = iter(iterable)
-	l = [next(iterator) for _ in range(n-1)]
+	l = [next(iterator) for _ in range(n - 1)]
 	for x in iterator:
 		yield l + [x]
 		l = l[1:] + [x]
+
 
 # pp(state)
 # count = 0
