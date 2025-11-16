@@ -3,3 +3,4 @@ ignore = ["E741"]
 
 [tool.ruff.format]
 indent-style = "tab"
+quote-style = "single"
