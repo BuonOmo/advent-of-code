@@ -1,4 +1,8 @@
+from copy import deepcopy
 from pprint import pp
+from time import sleep
+
+from cursed import Cursed
 
 
 def interact():
@@ -23,45 +27,17 @@ def trouverlamadame(tableau) -> tuple[int, int]:
 				raise ValueError(f"Unknown character '{cell}'")
 	raise ValueError("No '^' found in the tableau")
 
-def find_suspect(visited: list[tuple[int, int]]) -> tuple[int, int] | None:
-	if len(visited) < 3:
-		return None
 
-	a, b, c = visited[-3:]
-
-	if a[0] == b[0]:
-		return (c[0], a[1])
-	else:
-		return (a[0], c[1])
-
-
-def detect_obstacle(
-	a: tuple[int, int], b: tuple[int, int], obstacles: list[list[bool]]
-) -> bool:
-	if a[0] == b[0]:
-		for i in range(min(a[1], b[1]), max(a[1], b[1])):
-			if obstacles[a[0]][i]:
-				return True
-	else:
-		for i in range(min(a[0], b[0]), max(a[0], b[0])):
-			if obstacles[i][a[1]]:
-				return True
-	return False
+# (6,4)(6,6)(7,6)(8,2)(8,4)(8,7)
 
 
 def update(state):
 	dir = state['direction']
 	obstacles = state['obstacles']
 	running = state['running']
-	visited = state['visited']
 	count = state['count']
+	backup = state['backup']
 	x, y = state['position']
-
-	suspect = find_suspect(state['visited'])
-
-	if (x, y) == suspect and not detect_obstacle(suspect, visited[-3], obstacles):
-		count += 1
-		pp(suspect)
 
 	vectors = {
 		'up': (-1, 0),
@@ -72,13 +48,44 @@ def update(state):
 	directions = ['up', 'right', 'down', 'left']
 	new_x = x + vectors[dir][0]
 	new_y = y + vectors[dir][1]
-	if not (0 <= new_x < state['size'][0] and 0 <= new_y < state['size'][1]):
-		running = False
-	elif obstacles[new_x][new_y]:
-		dir = directions[(directions.index(dir) + 1) % len(directions)]
-		visited.append((x, y))
-	else:
-		x, y = new_x, new_y
+
+	# TODO: detecter la boucle.
+	# TODO: la faire avancer de 1 une fois le test passé.
+
+	if not (
+		0 <= new_x < state['size'][0] and 0 <= new_y < state['size'][1]
+	):  # La madame sort
+		if backup is None:
+			running = False
+		else:
+			dir = backup['direction']
+			x, y = backup['position']
+			obstacles = backup['obstacles']
+			backup = None
+	elif obstacles[new_x][new_y]:  # La madame trouve un obstacle
+		if (
+			backup is not None
+			and (new_x, new_y) == backup['position']
+			and dir == backup['direction']
+		):  # Ça boucle
+			count += 1
+			obstacles = backup['obstacles']
+			x, y = backup['position']
+			backup = None
+		else:
+			dir = directions[(directions.index(dir) + 1) % len(directions)]
+	else:  # La madame peut avancer
+		if backup is None:  # On rajoute l'obstacle
+			backup = {
+				'direction': dir,
+				'position': (new_x, new_y),
+				'obstacles': deepcopy(obstacles),
+			}
+			obstacles[new_x][new_y] = True
+			dir = directions[(directions.index(dir) + 1) % len(directions)]
+		else:
+			x, y = new_x, new_y
+
 	return {
 		'count': count,
 		'running': running,
@@ -86,8 +93,9 @@ def update(state):
 		'position': (x, y),
 		'size': state['size'],
 		'obstacles': obstacles,
-		'visited': visited,
+		'backup': backup,
 	}
+
 
 tableau: list[list[str]] = []
 
@@ -95,24 +103,40 @@ with open('example') as file:
 	for line in file:
 		tableau.append(list(line.strip()))
 
-first_x, first_y = trouverlamadame(tableau)
-obstacles = creerlesobstacles(tableau)
-visited = []
-if obstacles[first_x][first_y - 1]:
-	visited.append((first_x, first_y))
 
 state = {
 	'count': 0,
 	'running': True,
 	'direction': 'up',
-	'position': (first_x, first_y),
-	'obstacles': obstacles,
+	'position': trouverlamadame(tableau),
+	'obstacles': creerlesobstacles(tableau),
 	'size': (len(tableau), len(tableau[0])),
-	'visited': visited,
+	'backup': None,  # direction, position, obstacles
 }
 
-while state['running']:
-	state = update(state)
+
+def show(state, display):
+	s = ''
+	for i in range(state['size'][0]):
+		for j in range(state['size'][1]):
+			if state['obstacles'][i][j]:
+				s += '#'
+			elif state['position'] == (i, j):
+				s += {'up': '^', 'right': '>', 'down': 'v', 'left': '<'}[
+					state['direction']
+				]
+			else:
+				s += '.'
+		s += '\n'
+	display.print_grid(s, state['position'])
+	display.pp(state['count'])
+	sleep(0.1 if state['backup'] is None else 0.01)
+
+
+with Cursed() as c:
+	while state['running']:
+		state = update(state)
+		show(state, c)
 
 
 def nwise(iterable, n):
@@ -121,19 +145,6 @@ def nwise(iterable, n):
 	for x in iterator:
 		yield l + [x]
 		l = l[1:] + [x]
-
-
-# pp(state)
-# count = 0
-# size = state['size']
-# pp(list(nwise(state['visited'], 3)))
-# for a,b,c in nwise(state['visited'], 3):
-# 	def check(x):
-# 		return a[x] == b[x] or b[x] == c[x]
-
-# 	if check(0) and check(1):
-
-# 		count += 1
 
 
 print(state['count'])
