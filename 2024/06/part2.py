@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
 from copy import deepcopy
 from pprint import pp
 from time import sleep
+import sys
 
 from cursed import Cursed
 
@@ -31,13 +33,25 @@ def trouverlamadame(tableau) -> tuple[int, int]:
 # (6,4)(6,6)(7,6)(8,2)(8,4)(8,7)
 
 
+def reset(state):
+	x, y = state['backup']['position']
+	state['obstacles'][x][y] = False
+	return state | {
+		'direction': state['backup']['direction'],
+		'position': (x, y),
+		'backup': None,
+		'deja_vue': set(),
+	}
+
+
+
 def update(state):
 	dir = state['direction']
 	obstacles = state['obstacles']
 	running = state['running']
-	count = state['count']
 	backup = state['backup']
 	x, y = state['position']
+	deja_vue = state['deja_vue']
 
 	vectors = {
 		'up': (-1, 0),
@@ -54,69 +68,79 @@ def update(state):
 	):  # La madame sort
 		if backup is None:
 			running = False
-		else:
-			dir = backup['direction']
-			x, y = backup['position']
-			obstacles[x][y] = False
-			backup = None
+		else: # Simulation
+			return reset(state)
 	elif obstacles[new_x][new_y]:  # La madame trouve un obstacle
-		if (
-			backup is not None
-			and (new_x, new_y) == backup['position']
-			and dir == backup['direction']
-		):  # Ça boucle
-			# FIXME: on detecte seulement les boucles qui reviennent
-			#   la ou on a mis un nouvel obstacle. Mais certaines
-			#   boucles peuvent être bloquées après ça. Il faut
-			#   detecter les boucles avec les autres obstacles que
-			#   ceux qu'on a créé.
-			count += 1
-			x, y = backup['position']
-			obstacles[x][y] = False
-			backup = None
+		if backup is not None: # Simulation
+			if (x, y, dir) in deja_vue: # Ça boucle peut-être
+				state['looping'].add(state['backup']['position'])
+				return reset(state)
+			else:
+				deja_vue.add((x, y, dir))
+				dir = directions[(directions.index(dir) + 1) % len(directions)]
 		else:
 			dir = directions[(directions.index(dir) + 1) % len(directions)]
 	else:  # La madame peut avancer
-		if backup is None:  # On rajoute l'obstacle
+		if backup is None and (new_x, new_y) not in state['visited']:  # On rajoute l'obstacle
 			backup = {
 				'direction': dir,
 				'position': (new_x, new_y),
 			}
 			obstacles[new_x][new_y] = True
+			state['visited'].add((new_x, new_y))
 			dir = directions[(directions.index(dir) + 1) % len(directions)]
-		else:
+		else: # Simulation
 			x, y = new_x, new_y
 
-	return {
-		'count': count,
+	return state | {
 		'running': running,
 		'direction': dir,
 		'position': (x, y),
-		'size': state['size'],
 		'obstacles': obstacles,
 		'backup': backup,
+		'deja_vue': deja_vue,
 	}
 
 
 tableau: list[list[str]] = []
 
-with open('input') as file:
+with open(sys.argv[1] if len(sys.argv) > 1 else 'input') as file:
 	for line in file:
 		tableau.append(list(line.strip()))
 
-
+pos = trouverlamadame(tableau)
 state = {
-	'count': 0,
+	'looping': set(),
 	'running': True,
 	'direction': 'up',
-	'position': trouverlamadame(tableau),
+	'position': pos,
 	'obstacles': creerlesobstacles(tableau),
 	'size': (len(tableau), len(tableau[0])),
 	'backup': None,  # direction, position, obstacles
+	'deja_vue': set(),
+	'visited': set([pos]),
 }
 
+should_show = {
+	'enabled': False,
+	'quit': False,
+	'current': None
+}
 
 def show(state, display):
+	global should_show
+	if not should_show['enabled']:
+		if state['backup'] is None:
+			return
+		if  should_show['quit'] and should_show['current'] == state['backup']['position']:
+			return
+		a = state['backup']['position'] == (86, 21) and state['backup']['direction'] != 'right'
+		b = state['backup']['position'] == (86, 35) and state['backup']['direction'] != 'right'
+		if not (a or b):
+			return
+		should_show['current'] = state['backup']['position']
+		should_show['enabled'] = True
+
 	s = ''
 	for i in range(state['size'][0]):
 		for j in range(state['size'][1]):
@@ -130,26 +154,24 @@ def show(state, display):
 				s += '.'
 		s += '\n'
 	display.print_grid(s, state['position'])
-	# display.pp(state['count'])
-	sleep(1 if state['backup'] is None else 0.1)
+	display.pp(state | {'looping': len(state['looping']), 'obstacles': '...', 'visited': '...'})
+	if display.getch() == 113: # q
+		should_show['quit'] = True
+	# sleep(1 if state['backup'] is None else 0.1)
 
 
-with Cursed() as c:
-	total_steps = 6024
-	steps = 0
-	prout = True
-	while state['running']:
-		if state['backup'] is None:
-			steps += 1
-		# print(f"Progress: {100 * steps / total_steps:.2f}% ({steps})\r", end='')
-		state = update(state)
-
-		if steps >= 9:
-			if prout:
-				c.pp(state)
-			prout = False
-			# c.pp(steps)
-			show(state, c)
+#with Cursed() as c:
+total_steps = 6024
+steps = 0
+prout = True
+while state['running']:
+	if state['backup'] is None:
+		steps += 1
+	# print(f"Progress: {100 * steps / total_steps:.2f}% ({steps})\r", end='')
+	# c.pp(f"Progress: {100 * steps / total_steps:.2f}% ({steps})")
+	state = update(state)
+	# c.pp({ 'looping': state['looping'], 'deja_vue': state['deja_vue'], 'sim': state['backup'] is not None })
+	# show(state, c)
 
 
 def nwise(iterable, n):
@@ -159,5 +181,6 @@ def nwise(iterable, n):
 		yield l + [x]
 		l = l[1:] + [x]
 
-
-print(state['count'])
+print()
+# print(state['looping'])
+print(len(state['looping']))
