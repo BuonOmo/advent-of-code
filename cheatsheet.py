@@ -67,3 +67,8 @@ help(my_set.add)
 my_set.add("foo")
 my_set.add("foo")
 print(my_set) # {'foo'}
+
+
+## List comprehension
+
+squares = [x**2 for x in range(10)]
