@@ -72,3 +72,8 @@ print(my_set) # {'foo'}
 ## List comprehension
 
 squares = [x**2 for x in range(10)]
+
+## Enumerate
+
+list(range(len(["foo", "bar"]))) # [0, 1]
+list(enumerate(["foo", "bar"])) # [(0, 'foo'), (1, 'bar')]
