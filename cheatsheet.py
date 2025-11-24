@@ -77,3 +77,10 @@ squares = [x**2 for x in range(10)]
 
 list(range(len(["foo", "bar"]))) # [0, 1]
 list(enumerate(["foo", "bar"])) # [(0, 'foo'), (1, 'bar')]
+
+## String methods
+
+
+'.foo.bar'.index('.') # => 0
+'.foo.bar'.rindex('.') # => 4
+' '.join(['a', 'b']) # => 'a b'

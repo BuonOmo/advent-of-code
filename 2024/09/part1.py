@@ -3,26 +3,36 @@
 from sys import argv
 from time import time
 
-def splat(s: str) -> str:
+def bench(method):
+	def fn(*args):
+		t0 = time()
+		r = method(*args)
+		t1 = time()
+		print(f'{method.__name__} took {(t1 - t0) * 1_000:.3f} ms')
+		return r
+	return fn
+
+@bench
+def splat(s: str) -> list[int | str]:
 	'''
 	>>> splat('12345')
-	'0..111....22222'
+	[0, '.', '.', 1, 1, 1, '.', '.', '.', '.', 2, 2, 2, 2, 2]
 	>>> splat('10' * 11)
-	'012345678910'
+	[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 	'''
-	rv = ''
+	rv = []
 	for i, char in enumerate(s):
 		if i%2 == 0: # File
-			rv += str(i//2) * int(char)
+			rv.extend([i//2] * int(char))
 		else: # Free space
-			rv += '.' * int(char)
+			rv.extend('.' * int(char))
 	return rv
 
-def find_end_index(l: list[str]) -> int:
+def find_end_index(l: list[str | int]) -> int:
 	'''
-	>>> find_end_index('0..1')
+	>>> find_end_index([0, '.', '.', 1])
 	3
-	>>> find_end_index('0.1.')
+	>>> find_end_index([0, '.', 1, '.'])
 	2
 	>>> find_end_index('....')
 	Traceback (most recent call last):
@@ -33,12 +43,12 @@ def find_end_index(l: list[str]) -> int:
 			return index
 	raise ValueError('Y avait que des points')
 
-def fill(s: str) -> str:
+@bench
+def fill(l: list[int | str]) -> list[int | str]:
 	'''
-	>>> fill('0..111....22222')
-	'022111222......'
+	>>> fill([0, '.', 1])
+	[0, 1, '.']
 	'''
-	l = list(s)
 	for index, char in enumerate(l):
 		if char != '.':
 			continue
@@ -47,9 +57,10 @@ def fill(s: str) -> str:
 		if end_index < index:
 			break
 		l[index], l[end_index] = l[end_index], '.'
-	return ''.join(l)
+	return l
 
-def checksum(s: str) -> int:
+@bench
+def checksum(l: list[int | str]) -> int:
 	'''
 	To calculate the checksum, add up the result of multiplying
 	each of these blocks' position with the file ID number it
@@ -57,9 +68,9 @@ def checksum(s: str) -> int:
 	contains free space, skip it instead.
 	'''
 	sum = 0
-	for index, char in enumerate(s):
-		if char != '.':
-			sum += int(char) * index
+	for index, char in enumerate(l):
+		if type(char) is int:
+			sum += char * index
 	return sum
 
 
@@ -77,24 +88,17 @@ def checksum(s: str) -> int:
 # 4. checksum
 #    ...
 
-
+@bench
 def parse() -> str:
 	with open(argv[1] if len(argv) > 1 else '2024/09/example', 'r') as file:
 		return file.readline().strip()
 
-def bench(method, *args):
-	t0 = time()
-	r = method(*args)
-	t1 = time()
-	print(f'{method.__name__} took {(t1 - t0) * 1_000:.3f} ms')
-	return r
-
 if __name__ == '__main__':
 	# s = '12345'
-	s = bench(parse)
-	s = bench(splat, s)
-	s = bench(fill, s)
-	s = bench(checksum, s)
+	s = parse()
+	l = splat(s)
+	l = fill(l)
+	s = checksum(l)
 	print(s)
 
 # 89558806610 -> too low
