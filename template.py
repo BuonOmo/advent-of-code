@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-import fileinput
-from pprint import pp
+from sys import argv
 
-print = pp
-
-for line in fileinput.input():
-	print(line.strip())
+def parse() -> ...:
+	with open(argv[1], 'r') as file:
+		for line in file:
+			return line.strip()

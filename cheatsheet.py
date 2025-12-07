@@ -19,7 +19,6 @@ list_hello = list(hello) # ['H', 'e', 'l', 'l', 'o']
 obj = 1
 my_list = []
 my_list.append(obj)
-my_list.push(obj)
 print(my_list) # [1, 1]
 
 
@@ -108,3 +107,30 @@ print(tab[::-1]) # [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
 ## Math
 
 2 ** 5 # 32
+
+
+## Types
+
+tuple[int, int]
+list[list[list[list[int]]]]
+
+## Enum
+
+from enum import Enum
+
+class Op(Enum):
+	ADDITION = '+'
+	MULTIPLICATION = '*'
+
+Op('+') is Op.ADDITION # => True
+Op('e') # => ValueError
+'*' in Op # => True
+
+
+# Recursions (voir 2024/07 et 2025/07)
+
+def rec(...) -> ...:
+	# stop/garde -> on arrete d'appeler la récursion
+	#
+	# on s'appelle soi-même
+	# on renvoi le résultat aggrégé avec les enfants

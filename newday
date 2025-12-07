@@ -1,25 +1,28 @@
 #!/usr/bin/env zsh
 #
 # Arguments:
-# -l language (py, rb, c), defaults to py
-# -y year     four digits
+# -l language (py, rb, c, rs), defaults to py
+# -y year
 # -d day
 
 lang=py
 
 # Parse arguments
-while getopts ":l:y:d:" opt; do
+while getopts ":l:y:d::h" opt; do
 	case $opt in
 		l) lang=$OPTARG ;;
 		y) year=${(l:4::20:)OPTARG} ;;
 		d) day=${(l:2::0:)OPTARG} ;;
-		\?) echo "Invalid option -$OPTARG" >&2 ;;
+		h) echo "Usage: $0 [-l language] [-y year] [-d day] [-h]"
+			exit 0 ;;
+		\?) echo "Invalid option -$OPTARG" >&2
+			exit 1 ;;
 	esac
 done
 
 local -a folders=(*/*(/OnN))
 
-if (($#folders )); then
+if (($#folders)); then
 	newday="${folders[1]}"
 else
 	# Default to current year day 1
@@ -42,16 +45,25 @@ day_url="https://adventofcode.com/$year/day/${day#0}"
 	exit 1
 }
 
+likely_contains_example=$(
+	http --check-status "$day_url" \
+	| xq --html --xpath '//pre'
+)
+
+case "$likely_contains_example" in
+	"$(pbpaste)")
+		;;
+	*)
+		open "$day_url"
+
+		echo -n 'Copy example to clipboard and press Enter'
+		read -qs
+		echo
+		;;
+esac
+
 mkdir -p $newday
 cd $newday
-cp ../../template.$lang part1.$lang
-
-open "$day_url"
-
-echo -n 'Copy example to clipboard and press Enter'
-read -qs
-echo
-pbpaste > example
 
 http --check-status "$day_url/input" \
 	"Cookie:session=$ADVENT_SESSION" \
@@ -65,6 +77,10 @@ http --check-status "$day_url/input" \
 		>&2 echo "Is $day_url a valid URL?"
 		exit 1
 }
+
+cp ../../template.$lang part1.$lang
+
+pbpaste > example
 
 zed part1.$lang
 echo $newday
