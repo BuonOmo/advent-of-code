@@ -21,7 +21,7 @@ class Vertice:
 		x1, x2 = x
 		return a1 <= x1 <= b1 and a2 <= x2 <= b2
 
-	def intersects(self, other: Vertice) -> bool:
+	def raycast_intersects(self, other: Vertice) -> bool:
 		match (self.direction(), other.direction()):
 			case ('vertical', 'horizontal'):
 				vertical, horizontal = self, other
@@ -32,7 +32,21 @@ class Vertice:
 
 		return (
 			horizontal.a[0] <= vertical.a[0] < horizontal.b[0]
-			and vertical.a[1] <= horizontal.a[1] <= vertical.b[1]
+			and vertical.a[1] <= horizontal.a[1] < vertical.b[1]
+		)
+
+	def strict_intersects(self, other: Vertice) -> bool:
+		match (self.direction(), other.direction()):
+			case ('vertical', 'horizontal'):
+				vertical, horizontal = self, other
+			case ('horizontal', 'vertical'):
+				horizontal, vertical = self, other
+			case _:
+				return False
+
+		return (
+			horizontal.a[0] < vertical.a[0] < horizontal.b[0]
+			and vertical.a[1] < horizontal.a[1] < vertical.b[1]
 		)
 
 	def direction(self) -> str:
@@ -116,13 +130,12 @@ def is_inside(polygon: list[Vertice], point: Point) -> bool:
 	False
 	"""
 	other = Vertice(point, (point[0], 0))
-
 	nb = 0
 	for vertice in polygon:
 		if vertice.direction() == 'vertical':
 			continue
 		else:
-			if vertice.intersects(other):
+			if vertice.raycast_intersects(other):
 				nb += 1
 	return nb % 2 != 0
 
@@ -132,9 +145,15 @@ def consider(polygon: list[Vertice], a: Point, b: Point) -> bool:
 	b1, b2 = b
 	c = (a1, b2)
 	d = (b1, a2)
-	return (is_on_boundary(polygon, c) or is_inside(polygon, c)) and (
-		is_on_boundary(polygon, d) or is_inside(polygon, d)
-	)
+	rv1 = is_on_boundary(polygon, c) or is_inside(polygon, c)
+	rv2 = is_on_boundary(polygon, d) or is_inside(polygon, d)
+	rv3 = not any(
+	    my_vertice.strict_intersects(vertice)
+		for my_vertice in vertices([a, c, b, d])
+		for vertice in polygon
+	    )
+	return rv1 and rv2 and rv3
+
 
 def draw(edges: list[point]):
 	turtle.mode('world')
@@ -188,8 +207,8 @@ class Translator:
 
 if __name__ == '__main__':
 	tiles = parse()
-	draw(tiles)
-	assert_stuff(tiles)
+	# draw(tiles)
+	# assert_stuff(tiles)
 	polygon = list(vertices(tiles))
 
 	largest = 0
@@ -205,13 +224,9 @@ if __name__ == '__main__':
 			# )
 			if consider(polygon, t1, t2):
 				area = size(t1, t2)
-				if area == 4649416800:
-					print(t1, t2)
 
 				if area > largest:
 					largest = area
 	print(largest)
 else:
 	test_polygon = list(vertices([(1, 1), (1, 3), (3, 4), (4, 2)]))
-
-# 4649416800 -->trop haut

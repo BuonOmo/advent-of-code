@@ -2,7 +2,9 @@
 
 from sys import argv
 
-def parse() -> ...:
-	with open(argv[1], 'r') as file:
+def parse(filename: str | None = None) -> ...:
+	if not filename:
+		filename = argv[1]
+	with open(filename, 'r') as file:
 		for line in file:
 			return line.strip()
