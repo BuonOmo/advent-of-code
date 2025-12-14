@@ -5,6 +5,7 @@ from __future__ import annotations
 from itertools import pairwise
 from sys import argv
 from typing import Generator
+import turtle
 
 type Point = tuple[int, int]
 print('salut beauté')
@@ -135,9 +136,59 @@ def consider(polygon: list[Vertice], a: Point, b: Point) -> bool:
 		is_on_boundary(polygon, d) or is_inside(polygon, d)
 	)
 
+def draw(edges: list[point]):
+	turtle.mode('world')
+	w = turtle.window_width()
+	h = turtle.window_height()
+	turtle.setworldcoordinates(0, 0, w, h)
+	franklin = turtle.Turtle()
+	franklin.speed('fastest')
+	xmin = min(edge[0] for edge in edges)
+	xmax = max(edge[0] for edge in edges)
+	ymin = min(edge[1] for edge in edges)
+	ymax = max(edge[1] for edge in edges)
+
+	tr = Translator(xmin, xmax, ymin, ymax, w, h)
+	franklin.color('pink')
+	franklin.penup()
+	franklin.goto(tr.tr(edges[-1]))
+	franklin.pendown()
+	franklin.begin_fill()
+	for edge in edges:
+		franklin.goto(tr.tr(edge))
+	franklin.end_fill()
+	franklin.penup()
+	x, y = (17192, 85663)
+	u, v = (82591, 14572)
+	franklin.goto(tr.tr((x,y)))
+	franklin.color('black')
+	franklin.pendown()
+	franklin.goto(tr.tr((x,v)))
+	franklin.goto(tr.tr((u,v)))
+	franklin.goto(tr.tr((u,y)))
+	franklin.goto(tr.tr((x,y)))
+	franklin.penup()
+	turtle.done()
+
+class Translator:
+	def __init__(self, xmin, xmax, ymin, ymax, w, h):
+		self.xmin = xmin - 1
+		self.xmax = xmax + 1
+		self.ymin = ymin - 1
+		self.ymax = ymax + 1
+		self.w = w
+		self.h = h
+
+	def tr(self, pt: point) -> point:
+		x, y = pt
+		nx = ((x - self.xmin) * self.w) / (self.xmax - self.xmin)
+		ny = ((y - self.ymin) * self.h) / (self.ymax - self.ymin)
+		return (nx, ny)
+
 
 if __name__ == '__main__':
-	tiles = parse('input')
+	tiles = parse()
+	draw(tiles)
 	assert_stuff(tiles)
 	polygon = list(vertices(tiles))
 
