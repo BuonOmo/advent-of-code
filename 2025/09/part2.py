@@ -30,7 +30,7 @@ class Vertice:
 				return False
 
 		return (
-			horizontal.a[0] <= vertical.a[0] <= horizontal.b[0]
+			horizontal.a[0] <= vertical.a[0] < horizontal.b[0]
 			and vertical.a[1] <= horizontal.a[1] <= vertical.b[1]
 		)
 
@@ -137,25 +137,30 @@ def consider(polygon: list[Vertice], a: Point, b: Point) -> bool:
 
 
 if __name__ == '__main__':
-	tiles = parse('example')
+	tiles = parse('input')
 	assert_stuff(tiles)
 	polygon = list(vertices(tiles))
 
 	largest = 0
 	for i, t1 in enumerate(tiles):
 		for t2 in tiles[i + 1 :]:
-			print(
-				{
-					't1': t1,
-					't2': t2,
-					'consider': consider(polygon, t1, t2),
-					'size': size(t1, t2),
-				}
-			)
+			# print(
+			# 	{
+			# 		't1': t1,
+			# 		't2': t2,
+			# 		'consider': consider(polygon, t1, t2),
+			# 		'size': size(t1, t2),
+			# 	}
+			# )
 			if consider(polygon, t1, t2):
 				area = size(t1, t2)
+				if area == 4649416800:
+					print(t1, t2)
+
 				if area > largest:
 					largest = area
 	print(largest)
 else:
 	test_polygon = list(vertices([(1, 1), (1, 3), (3, 4), (4, 2)]))
+
+# 4649416800 -->trop haut
